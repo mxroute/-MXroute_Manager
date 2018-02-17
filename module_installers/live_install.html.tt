@@ -1,5 +1,0 @@
-[%
-USE Api1;
-Api1.live_exec("LangMods", "install", [FORM.lang, FORM.item('mod')] );
-%]
-
