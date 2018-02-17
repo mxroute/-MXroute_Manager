@@ -1,0 +1,121 @@
+[%
+    SET records = execute('DNSSEC', 'fetch_ds_records', { 'domain' => FORM.item('domain') });
+    SET dns_sec_enabled = 0;
+    SET dns_sec_records = {};
+    SET records_list = [];
+    IF records.status;
+        SET dns_sec_records = records.data.item(FORM.item('domain'));
+        IF dns_sec_records.exists('keys');
+            SET dns_sec_enabled = 1;
+            # Get a list of the Keys with the Active key being the first one
+            SET records_list = dns_sec_records.item('keys').values().sort('active').reverse();
+        ELSE;
+            SET dns_sec_enabled = 0;
+        END;
+    END;
+-%]
+[% IF dns_sec_enabled %]
+<div class="form-group">
+    <strong> [% locale.maketext("Status:") %] </strong>
+    <span id="dnssec_status">[% locale.maketext("Enabled") %]</span>
+    <button type="button"
+        id="toggle_dnssec"
+        name="toggle_dnssec"
+        onclick="DNSSEC.confirm_disable()"
+        class="btn btn-primary">
+        <span id="btnLoader" class="fa fa-refresh button-loading-indicator" style="display: none"></span>
+        <span id="btnText">[% locale.maketext("Disable") %]</span></button>
+</div>
+<div id="dnssec-disable-warning" style="display: none">
+    <div class="alert alert-warning">
+        <span class="glyphicon glyphicon-exclamation-sign"></span>
+        <div class="alert-message">
+            <p>[% locale.maketext('[output,strong,Warning:] If you disable [asis,DNSSEC] on a domain, you must ensure that the domain registrar does not have a [asis,DS] record configured for the domain. Failure to do so will cause [asis,DNS] resolution issues.') %]</p>
+            <p>[% locale.maketext('Are you sure you want to disable [asis,DNSSEC] on the domain “[_1]”?', FORM.item('domain')) %]</p>
+            <div class="form-group">
+            <button type="button"
+                id="confirm_disable"
+                name="confirm_disable"
+                onclick="DNSSEC.disable()"
+                class="btn btn-primary">[% locale.maketext('Yes') %]</button>
+            <button type="button"
+                id="cancel_disable"
+                name="cancel_disable"
+                onclick="DNSSEC.cancel_disable()"
+                class="btn btn-default">[% locale.maketext('No') %]</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+<p class="section-text">[% locale.maketext('Select a Digest Type for each active key. You must configure a [asis,DS] record at your domain registrar with the corresponding Digest Type and Digest.') %]</p>
+<table id="dns_sec_keys" class="table table-striped responsive-table">
+    <thead>
+    <tr>
+        <th>&nbsp;</th>
+        <th>[% locale.maketext('Key Tag') %]</th>
+        <th>[% locale.maketext('Algorithm') %]</th>
+        <th id="digest-type-header">[% locale.maketext('Digest Type') %]</th>
+        <th>[% locale.maketext('Digest') %]</th>
+    </tr>
+    </thead>
+    <tbody>
+    [% FOREACH record = records_list; %]
+    <tr id="info_row_[% record.key_tag.html() %]" class="dt_info_row">
+        <td class="icon-column" data-title="[% locale.maketext('Active key') %]">
+        [% IF record.active %]
+            <span class="fa fa-star fa-lg" title="[% locale.maketext('Active key') %]"></span>
+        [% ELSE %]
+            &nbsp;
+        [% END %]
+        </td>
+        <td class="keytag-column" data-title="[% locale.maketext('Key Tag') %]">[% record.key_tag.html() %]</td>
+        <td class="algo-column" data-title="[% locale.maketext('Algorithm') %]">
+            [% record.algo_num.html() %]
+            [% record.algo_desc.html() %]
+            [% locale.maketext('[quant,_1,bit,bits]', record.bits) %]
+        </td>
+        <td class="digest-type-column" data-title="[% locale.maketext('Digest Type') %]">
+            <select id="digest_type_[% record.key_tag.html() %]"
+                name="digest_type_[% record.key_tag.html() %]"
+                class="form-control"
+                aria-labelledby="digest-type-header"
+                onchange="DNSSEC.show_digest(event, '[%- record.key_tag.html().trim() -%]')">
+            [% FOREACH digest_obj = record.digests.sort('algo_num'); %]
+                [
+                <option value="[% digest_obj.algo_num.html() %]"
+                [% IF digest_obj.algo_num == 2 # select SHA-256 by default %]
+                selected
+                [% END %]
+                >[% digest_obj.algo_num.html() %]
+                [% digest_obj.algo_desc.html() %]
+                </option>
+            [% END %]
+            </select>
+        </td>
+        <td class="digest-column" data-title="[% locale.maketext('Digest') %]">
+            [% FOREACH digest_obj = record.digests.sort('algo_num'); %]
+                <span id="record_[% record.key_tag.html() %]_algo_[% digest_obj.algo_num.html() %]"
+                [% IF digest_obj.algo_num != 2 # select SHA-256 by default %]
+                style="display: none"
+                [% END %]
+                >[% digest_obj.digest.html() %]</span>
+            [% END %]
+        </td>
+    </tr>
+    [% END %]
+    </tbody>
+</table>
+[% ELSE %]
+<div class="form-group">
+    <strong> [% locale.maketext("Status:") %] </strong>
+    <span class="service-status" id="dnssec_status">[% locale.maketext("Disabled") %]</span>
+    <button type="button"
+        id="toggle_dnssec"
+        name="toggle_dnssec"
+        onclick="DNSSEC.enable()"
+        class="btn btn-primary">
+        <span id="btnLoader" class="fa fa-refresh button-loading-indicator" style="display: none"></span>
+        <span id="btnText">[% locale.maketext("Enable") %]</span></button>
+</div>
+[% END %]

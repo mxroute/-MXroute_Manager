@@ -1,0 +1,34 @@
+[%
+    SET CPANEL.CPVAR.dprefix = "../../";
+
+    Api1.pre_exec("Email", "delspam");
+    SET disable_spam_output = Api1.exec("Email", "delspam", [undef]);
+    Api1.post_exec("Email", "delspam");
+
+    Api1.pre_exec("Email", "spamstatus");
+    SET spam_status = Api1.exec("Email", "spamstatus", [undef]);
+    Api1.post_exec("Email", "spamstatus");
+
+%]
+
+[% WRAPPER '_assets/master.html.tt'
+    app_key = 'apache_spam_assassin'
+%]
+
+<div class="body-content">
+    <div>
+        <pre id="outDisableSpamOutput">
+            [% disable_spam_output %]
+        </pre>
+        [% IF !CPANEL.CPVAR.spamstatus %]
+            <div id="disableSpamAssassinAlert" class="alert alert-success">
+                <span id="disableSpamAssassinAlertImg" class="glyphicon glyphicon-ok-sign"></span>
+                <div id="disableSpamAssassinAlertMsg" class="alert-message">
+                    [% locale.maketext("Apache SpamAssassin™ is now disabled.") %]
+                </div>
+            </div>
+        [% END %]
+    </div>
+    [% INCLUDE _assets/return_link.html.tt return_location='spam.html' return_link_text=locale.maketext('Go Back') %]
+</div>
+[% END %]

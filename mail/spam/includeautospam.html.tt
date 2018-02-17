@@ -1,0 +1,17 @@
+<!-- [% Api1.pre_exec("Email", "spamstatus") ;   Api1.exec("Email", "spamstatus", [undef]) ;  Api1.post_exec("Email", "spamstatus") %] sets CPVAR -->
+
+[% IF CPANEL.CPVAR.item('spamstatus') %]
+<p id="descSpamStatus">
+    [%
+        locale.maketext(
+            'To automatically delete messages marked as spam, [output,url,_1,click here,id,_2]. To disable auto-deletion of spam, remove the “[_3]” from “[output,url,_4,_5,id,_6]”.',
+            'addspamfilter.html',
+            'lnkAutomaticallyDeleteSpam',
+            'Generated Apache SpamAssassin™ Discard Rule',  # Not translated
+            '../filters/userfilters.html',
+            locale.maketext('Email Filters'),
+            'lnkAccountLevelEmailFilter',
+        );
+    %]
+</p>
+[% END %]

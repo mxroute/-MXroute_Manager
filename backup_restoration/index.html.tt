@@ -1,0 +1,30 @@
+[%
+USE Uapi;
+
+# Declare the root directory
+SET CPANEL.CPVAR.dprefix = "../";
+
+WRAPPER '_assets/master.html.tt'
+    app_key = 'backup_restoration'
+    include_legacy_stylesheets = 0
+    include_legacy_scripts = 0
+    use_master_bootstrap = 0
+    include_cjt = 0
+    page_stylesheets = CPANEL.is_debug_mode_enabled() ?
+        [ "backup_restoration/index.css" ] :
+        [ "backup_restoration/index.min.css" ];
+-%]
+
+<script id="backup_restoration/views/list.ptt" type="text/ng-template">
+    [% PROCESS 'backup_restoration/views/list.ptt' %]
+</script>
+
+<div class="body-content">
+    <div growl></div>
+    <div ng-controller="applicationController">
+        <div id="viewContent" class="ng-cloak" ng-view ng-cloak></div>
+    </div>
+</div>
+
+[% PROCESS '_assets/cjt2_header_include.tt' %]
+[% END -%]

@@ -1,0 +1,188 @@
+[%
+# Arguments
+# form   - hash -
+# data   - hash -
+# vendor - hash -
+#    name - string - vendor name
+# environment - hash
+#    mysql_version - string
+#    contactemail  - string
+#    script_name   - string - name of the script
+# module - hash -
+#    name - string
+#    version - string
+#    meta - hash - lots of properties
+#    is_3rd_party - boolean
+#    is_modified - boolean
+# settings - hash -
+#    no_modified_cpanel - boolean
+#    no_3rd_party       - boolean
+#
+%]
+<h2 class="cpaddons">
+    [% locale.maketext('Manage: [_1] ⇨ [_2] ⇨ [_3]', module.vendor.html(), module.category.html(), module.display_app_name.html()) %]
+</h2>
+
+<p>
+[% IF module.is_modified %]
+    [% locale.maketext('This is a modified [_1] module. Contact the maintainer for support. (v[_2])', vendor.name.html(), module.version.html()) %]
+[% ELSIF !module.is_3rd_party %]
+    [% locale.maketext('This is a [_1] packaged module. (v[_2])', vendor.name, module.version) %]
+[% ELSE %]
+    [% locale.maketext('[asis,cPanel, Inc.] does not maintain this module. Contact the maintainer for support. (v[_1])', module.version.html()) %]
+[% END %]
+
+[% IF module.meta.packager_name %]
+<p>
+    [% locale.maketext('[output,strong,Packaged by:] [_1]', module.meta.packager_name.html()) %]
+</p>
+[% END %]
+
+[% IF module.meta.website %]
+<p>
+    [% locale.maketext('Website') %]
+    <a target="_blank" href="[% module.meta.website | url %]">
+        [% module.meta.website.html() %]
+    </a>
+</p>
+[% END %]
+
+[% IF module.meta.documentation_url %]
+<p>
+    <a target="_blank" href="[% module.meta.documentation_url | url %]">
+        [% locale.maketext('Documentation') %]
+    </a>
+</p>
+[% END %]
+
+[% IF module.meta.support_url %]
+<p>
+    <a target="_blank" href="[% module.meta.support_url | url %]">
+        [% locale.maketext('Support') %]
+    </a>
+</p>
+[% END %]
+
+[% IF module.meta.maintainer_url %]
+<p>
+    <a target="_blank" href="[% module.meta.maintainer_url | url %]">
+        [% locale.maketext('Maintainer') %]
+    </a>
+</p>
+[% END %]
+
+[% IF module.meta.changelog_url %]
+<p>
+    <a target="_blank" href="[% module.meta.changelog_url | url %]">
+        [% locale.maketext('Change Log') %]
+    </a>
+</p>
+[% END %]
+
+[% IF module.meta.minimum-mysql-version && module.meta.minimum_mysql_version_valid %]
+    [% IF environment.mysql_version >= module.meta.minimum-mysql-version %]
+<p>
+    [% locale.maketext('Requires MySQL [_1] or later.', module.meta.minimum-mysql-version.html()) %]
+</p>
+    [% END %]
+[% END %]
+
+[% IF module.meta.description %]
+<h4 class="cpaddons">
+    [% locale.maketext('Description:') %] (v[% module.meta.version | html %])
+</h4>
+<p>[% module.meta.description | html_break %]</p>
+[% END %]
+
+[% IF module.meta.license_text %]
+<h5 class="cpaddons">
+    <b>[% locale.maketext('License Terms:') %]</b>
+    <button id="toggle-license" type="button" class="btn btn-link">[% locale.maketext('Show') %]</button>
+</h5>
+<div id="license-section" style="display:none">
+    <div class="row">
+        <div class="col-xs-12 col-sm-6">
+            <textarea readonly="readonly"
+                name="license" id="license"
+                class="form-control"
+                cols="80" rows="10">[% module.meta.license_text | html %]</textarea>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-12 col-sm-6">
+            <div class="alert alert-info">
+                <span class="glyphicon glyphicon-info-sign"></span>
+                <div class="alert-message">
+                    <strong>[% locale.maketext('Note:') %]</strong>
+                    [% locale.maketext('When you install this application, you agree to the License Terms.') %]
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+[% END %]
+
+[% IF module.meta.security ||
+      (module.meta.security_id && module.meta.security_id_valid) ||
+      (!module.meta.security_rank) ||
+      (module.meta.security_rank < lowest_allowed) %]
+<h5 class="cpaddons"><b>[% locale.maketext('Security Information:') %]</b><button id="toggle-security" type="button" class="btn btn-link">[% locale.maketext('Show') %]</button></h5>
+<div id="security-section" style="display:none">
+    [% IF module.meta.security %]
+    <p>[% module.meta.security %]</p>
+    [% END %]
+
+    [% IF module.meta.security_id && module.meta.security_id_valid %]
+    <p>
+        <a  target="_blank"
+            href="[% vendor.securl %]?id=[% module.meta.security_id %]">
+            [% locale.maketext('[_1] Security Advisory', vendor.name.html()) %]
+        </a>
+            (<b>
+                [% locale.maketext('[output,strong,Only] valid if [asis,MD5] sum at that link is [_1].', module.md5.html()) %]
+            </b>)
+    </p>
+    [% END %]
+
+<!-- TODO: Restore or rework security ranking code. [LC-6609]
+    [% IF module.meta.security_rank %]
+    <p>
+    [% locale.maketext('Security Ranking: ([_1] out of 10)', module.meta.security_rank.html()) %]
+    [% SET secimg_url = vendor.secimg _ "/security_rank_" _ module.meta.security_rank _ ".gif" %]
+    <img align="absmiddle" src="[% secimg_url | url %] " />
+    </p>
+    [% END %]
+ -->
+
+<!-- TODO: Restore or rework security ranking code. [LC-6609]
+    [% IF !module.meta.security_rank || module.meta.security_rank < lowest_allowed %]
+    <p>
+    [% locale.maketext('You cannot use this [asis,cPAddon] because it is rated below the server’s approved security ranking. Contact your hosting provider for more information.') %]
+    </p>
+    [% END %]
+-->
+</div>
+[% END %]
+
+[% IF module.meta.addopt_url %]
+<p>
+    [% locale.maketext('Read more about the functionality that this [asis,cPAddon] provides at the following URL: [output,url,_1,_type,offsite]', module.meta.addopt_url.url()) %]
+</p>
+<p class="callout callout-warning">
+    [% locale.maketext('[asis,cPanel, Inc.] is not responsible for any aspect of any 3rd party modifications available.') %]<br />
+    [% locale.maketext('These modifications could break functionality or the ability to manage the [asis,cPAddon] via this interface. If you choose to install any 3rd party modifications, you do so at your own risk.') %]
+</p>
+[% END %]
+
+[% IF (module.supports_action.install && !data.action_has_prerequisites.install) ||
+      (module.supports_action.upgrade && !data.action_has_prerequisites.upgrade) ||
+      (module.supports_action.uninstall && !data.action_has_prerequisites.uninstall) &&
+      data.notices.has('critical_error', 'error') %]
+<div class="row">
+<div class="install-alerts col-xs-12 col-sm-6 col-md-6 col-lg-6">
+    [% PROCESS 'addoncgi/views/notices.tt' notices => data.notices %]
+</div>
+</div>
+[% END %]
+
+<hr />

@@ -1,0 +1,42 @@
+<div ng-class="{ disabled: isDisabled }">
+    <div class="radio">
+        <label>
+            <input  id="{{id}}_rdoNoLimit"
+                    type="radio"
+                    name="{{id}}_optLimit"
+                    class="rdoNoLimit"
+                    ng-checked="unlimitedChecked"
+                    ng-click="makeUnlimited()"
+                    ng-disabled="isDisabled">
+            <span>{{unlimitedLabel}}</span>
+        </label>
+    </div>
+    <div class="radio" ng-click="enableLimit()">
+        <label>
+            <input id="{{id}}_rdoLimit"
+                   type="radio"
+                   name="{{id}}_optLimit"
+                   class="rdoLimit"
+                   ng-checked="!unlimitedChecked"
+                   ng-disabled="isDisabled">
+        </label>
+        <span style="position:relative; display:inline-block">
+            <input id="{{id}}_txtLimit"
+                   class="textbox form-control"
+                   limit-range
+                   range-minimum="1"
+                   ng-attr-range-maximum="{{maximumValue}}"
+                   type="number"
+                   name="{{id}}_txtLimit"
+                   ng-model="value"
+                   ng-disabled="unlimitedChecked || isDisabled"
+                   select-on-focus
+                   min="{{unlimitedValue}}"
+                   ng-attr-max="{{maximumValue}}"
+                   ng-attr-maxlength="{{maximumLength}}">
+            <span ng-show="unlimitedChecked && !isDisabled"
+                  style="position:absolute; left: 0; right: 0; top: 0; bottom: 0;"></span>
+        </span>
+        <span id="{{id}}_lblUnits">{{unitsLabel}}</span>
+    </div>
+</div>

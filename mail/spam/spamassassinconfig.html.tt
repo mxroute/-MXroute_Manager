@@ -1,0 +1,39 @@
+[%
+    SET CPANEL.CPVAR.dprefix = "../../";
+
+    Api1.pre_exec("SpamAssassin", "config");
+    SET sa_config_result = Api1.exec("SpamAssassin", "config", [undef]);
+    Api1.post_exec("SpamAssassin", "config");
+
+    Api1.pre_exec("Email", "has_spam_as_acl");
+    SET has_spam_acl_result = Api1.exec("Email", "has_spam_as_acl", [undef]);
+    Api1.post_exec("Email", "has_spam_as_acl");
+%]
+
+
+[% WRAPPER '_assets/master.html.tt'
+    app_key = 'apache_spam_assassin'
+%]
+<div class="body-content">
+
+    <div class="section">
+        [%  Api1.exec("include", ["includeautospam.html"]) %]
+
+        <form id="frmSpamAssassinConfig" method="post" action="dospamassassinconfig.html">
+            <table id="saconfig-tbl" class="table table-striped">
+                [% sa_config_result %]
+            </table>
+
+               <div class="form-group">
+                    <input id="btnSave" type="submit" value="[% locale.maketext("Save")  %]" class="btn btn-primary" />
+                </div>
+        </form>
+
+        [% IF !(CPANEL.CPVAR.rewrites_subjects) %]
+            <p id="descPleaseNote">[% locale.maketext("Please note that you cannot configure Apache SpamAssassin™ for rewrites. Check the X-Spam-Bar header for the spam bar in your filter, or you can also check the X-Spam-Status header for Yes or No.")  %]</p>
+        [% END %]
+    </div>
+    [% INCLUDE _assets/return_link.html.tt return_location='spam.html' return_link_text=locale.maketext('Go Back') %]
+
+</div>
+[% END %]

@@ -1,0 +1,31 @@
+[%
+    SET CPANEL.CPVAR.dprefix = "../../";
+
+    Api1.pre_exec("Email", "delspambox");
+    SET delspambox_result = Api1.exec("Email", "delspambox", [undef]);
+    Api1.post_exec("Email", "delspambox");
+
+    Api1.pre_exec("Email", "spamboxstatus");
+    SET spamboxstatus_result = Api1.exec("Email", "spamboxstatus", [undef]);
+    Api1.post_exec("Email", "spamboxstatus");
+
+%]
+
+
+[% WRAPPER '_assets/master.html.tt'
+    app_key = 'apache_spam_assassin'
+%]
+<div class="body-content">
+    <h2>[% locale.maketext("Spam Box")  %]</h2>
+
+    [% delspambox_result.html() %]
+
+    [% IF !CPANEL.CPVAR.spamboxenabled %]
+        <p>[% locale.maketext("Spam Box is now [output,class,disabled,status].")  %]</p>
+    [% ELSE %]
+        <p>[% locale.maketext("Unable to disable Spam Box.")  %]</p>
+    [% END %]
+
+    [% INCLUDE _assets/return_link.html.tt return_location='spam.html' return_link_text=locale.maketext('Go Back') %]
+</div>
+[% END %]

@@ -1,0 +1,130 @@
+[%-
+USE UI_Includes;
+USE Master;
+
+SET hasCloudLinux = ExpVar.expand('$hascloudlinux'),
+    user = ExpVar.expand('$user'),
+    dns = CPANEL.CPDATA.DNS,
+    homeDir = ExpVar.expand('$homedir'),
+    isDemo = CPANEL.CPDATA.DEMO;
+
+IF hasCloudLinux;
+    Api1.pre_exec("LVEInfo", "start");
+    Api1.exec("LVEInfo", "start", [undef]);
+    Api1.post_exec("LVEInfo", "start");
+END;
+
+SET statsCollapsed = '',
+    xStatsCollapsed = execute( 'NVData', 'get', { 'names' => 'xstatscollapsed' } );
+
+IF xStatsCollapsed.status;
+    statsCollapsed = xStatsCollapsed.data.1.value;
+END;
+
+IF hasCloudLinux;
+    SET stats = execute( 'StatsBar', 'get_stats', { 'display' => 'lvecpu|lvemem|lvemep|diskusage|filesusage|bandwidthusage', 'infinitylang' => 'true' } );
+ELSE;
+    SET stats = execute( 'StatsBar', 'get_stats', { 'display' => 'diskusage|filesusage|bandwidthusage', 'infinitylang' => 'true' } );
+END;
+
+# used to get the last login IP
+-%]
+
+[%  MACRO set_bar_class(test_percent)
+    BLOCK;
+        IF test_percent >= 80;
+            'progress-bar progress-bar-danger';
+        ELSIF test_percent >= 60;
+            'progress-bar progress-bar-warning';
+        ELSIF test_percent >= 40;
+            'progress-bar progress-bar-info';
+        ELSE;
+            'progress-bar progress-bar-success';
+        END;
+    END
+%]
+
+[% UI_Includes.content( 'above_stats_bar.html.tt' ); %]
+
+<div id="content-stats" class="section">
+    <div id="stats-header">
+        <div id="toggle_extended_stats_img" class="box-expand-control">
+            &nbsp;
+        </div>
+        <span class="section-header">
+            [% user %]
+        </span>
+    </div>
+    <table id="stats">
+        <tr>
+            <td id="stats_maindomain_text" class="stats_left">
+                [% locale.maketext("Main Domain") %]
+            </td>
+            <td id="stats_maindomain_value" class="stats_right">
+                <b>[% dns %]</b>
+            </td>
+        </tr>
+        <tr>
+            <td id="stats_homedir_text" class="stats_left">
+                [% locale.maketext("Home Directory") %]
+            </td>
+            <td id="stats_homedir_value" class="stats_right">
+                [% homeDir %]
+            </td>
+        </tr>
+
+        [% IF !isDemo %]
+        <tr>
+            <td id="stats_lastlogin_text" class="stats_left">
+                [% locale.maketext("Last Login From") %]
+            </td>
+            <td id="stats_lastlogin_value" class="stats_right">
+                [% execute( 'LastLogin', 'get_last_or_current_logged_in_ip' ).data %]
+            </td>
+        </tr>
+        [% END %]
+
+        [% FOREACH stat IN stats.data %]
+        <tr id="stats_[% stat.id %]_row">
+            <td id="stats_[% stat.id %]_text" class="stats_left">
+                [% stat.item %]
+            </td>
+            <td class="stats_right">
+                <div>
+                    <span id="stats_[% stat.id %]_count">[% stat.count %]</span> /
+                    <span id="stats_[% stat.id %]_max">[% stat.max %]</span>
+                    [% IF stat.percent >= 80 && varcache.upgrade_app_info %]
+                      <a class="lnkInlinePrefUpgrade" href="[%- CPANEL.CPVAR.dprefix _ varcache.upgrade_app_info.url -%]">
+                        [%- varcache.upgrade_app_info.itemdesc -%]
+                      </a>
+                    [% END %]
+                  </div>
+                <div class="progress">
+                    <div id="stats_[% stat.id %]_percent" class="[% set_bar_class(stat.percent) %]" role="progressbar" aria-valuenow="[% stat.percent %]" aria-valuemin="0" aria-valuemax="100" title="[% stat.percent %]%" style="width: [% stat.percent %]%;">
+                    </div>
+                </div>
+            </td>
+        </tr>
+        [% END %]
+    </table>
+
+    [% IF statsCollapsed == "expanded" %]
+        <div id="extended_stats">
+            [% INSERT home/retro/extended_statsbar.html.tt %]
+        </div>
+        <!-- this is a status value not text, if you change it, translate it, etc it will break the functionality. If it is displayed then this system need refactored to separate the human text from the computer status -->
+        <div id="extended_stats_state" class="hide">shown</div>
+        <div id="content-stats-end" class="collapse-stats">
+            <div id="extended_stats_loading_icon" style="display: none"></div>
+            <a href="#" id="toggle_extended_stats">[% locale.maketext("Collapse Stats") %]</a>
+        </div>
+    [% ELSE %]
+        <div id="extended_stats" style="display: none"></div>
+        <!-- this is a status value not text, if you change it, translate it, etc it will break the functionality. If it is displayed then this system need refactored to separate the human text from the computer status -->
+        <div id="extended_stats_state" class="hide">hidden</div>
+        <div id="content-stats-end">
+            <div id="extended_stats_loading_icon" style="display: none"></div>
+            <a href="#" id="toggle_extended_stats">[% locale.maketext("Expand Stats") %]</a>
+        </div>
+    [% END %]
+</div><!-- end content-stats -->

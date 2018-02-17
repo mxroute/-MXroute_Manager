@@ -1,0 +1,139 @@
+[%
+    USE JSON;
+    USE Master;
+    USE CPBranding;
+
+    PROCESS '_assets/progress_bar_macro.html.tt';
+
+    SET hasCloudLinux = ExpVar.expand('$hascloudlinux'),
+        hasPostGres = ExpVar.expand('$haspostgres'),
+        hasFTP = ExpVar.expand('$hasftp'),
+        hasDiskUsageIncludeSQLdbs = CPANEL.CPCONF.disk_usage_include_sqldbs,
+        hasDiskUsageIncludeMailman = CPANEL.CPCONF.disk_usage_include_mailman,
+        showFileUsage = CPANEL.CPCONF.file_usage,
+        mysqlFeature = CPANEL.feature("mysql"),
+        postgresFeature = CPANEL.feature("postgres");
+
+    SET stats_to_display = '';
+    SET stats_hash = {};
+
+    IF hasCloudLinux;
+        Api1.pre_exec("LVEInfo", "start");
+        Api1.exec("LVEInfo", "start", [undef]);
+        Api1.post_exec("LVEInfo", "start");
+
+        stats_hash.lvecpu.id = 'lvecpu';
+        stats_hash.lvecpu.desc = locale.maketext('CPU Usage');
+
+        stats_hash.lvemem.id = 'lvemem';
+        stats_hash.lvemem.desc = locale.maketext('Memory Usage');
+
+        stats_hash.lvemep.id = 'lvemep';
+        stats_hash.lvemep.desc = locale.maketext('Entry Processes');
+    END;
+
+    IF CPANEL.feature("diskusageviewer");
+         IF CPANEL.feature("diskusageviewer");
+            stats_hash.diskusage.id = 'disk_usage';
+        END;
+
+        IF showFileUsage;
+            stats_hash.filesusage.id = 'filesusage';
+            stats_hash.filesusage.desc = locale.maketext('File Usage');
+        END;
+
+        IF hasDiskUsageIncludeSQLdbs AND CPANEL.feature("postgres") AND hasPostGres;
+            stats_hash.cachedpostgresdiskusage.id = 'cachedpostgresdiskusage';
+            stats_hash.cachedpostgresdiskusage.desc = locale.maketext('PostgreSQL Disk Usage');
+        END;
+
+        IF hasDiskUsageIncludeSQLdbs AND CPANEL.feature("mysql");
+            stats_hash.cachedmysqldiskusage.id = 'cachedmysqldiskusage';
+            stats_hash.cachedmysqldiskusage.desc = locale.maketext('MySQL® Disk Usage');
+        END;
+
+        IF hasDiskUsageIncludeMailman AND CPANEL.feature("lists");
+            stats_hash.cachedlistdiskusage.id = 'cachedlistdiskusage';
+            stats_hash.cachedlistdiskusage.desc = locale.maketext('Mailing Lists Disk Usage');
+        END;
+    END;
+
+    IF CPANEL.feature("bandwidth");
+        stats_hash.bandwidthusage.id = 'bandwidth';
+    END;
+
+    IF CPANEL.feature("addondomains");
+        stats_hash.addondomains.id = "addon_domains";
+    END;
+
+    IF CPANEL.feature("subdomains");
+        stats_hash.subdomains.id = "subdomains";
+    END;
+
+    IF CPANEL.feature("parkeddomains");
+        stats_hash.parkeddomains.id = "aliases";
+    END;
+
+    IF CPANEL.feature("popaccts");
+        stats_hash.emailac_counts.id = "email_accounts";
+    END;
+
+    IF CPANEL.feature("lists");
+        stats_hash.mailinglists.id = "mailing_lists";
+    END;
+
+    IF CPANEL.feature("autoresponders");
+        stats_hash.autoresponders.id = "autoresponders";
+    END;
+
+    IF CPANEL.feature("forwarders") OR CPANEL.feature("emaildomainfwd");
+       stats_hash.emailforwarders.id = "forwarders";
+    END;
+
+    IF CPANEL.feature("blockers");
+       stats_hash.emailfilters.id = "email_filters";
+    END;
+
+    IF CPANEL.feature("ftpaccts") AND hasFTP;
+       stats_hash.ftpaccounts.id = "ftp_accounts";
+    END;
+
+    IF CPANEL.feature("mysql");
+        stats_hash.mysqldatabases.id = "mysql_databases";
+    END;
+
+    IF hasPostGres AND CPANEL.feature("postgres");
+        stats_hash.postgresqldatabases.id = "postgresql_databases";
+    END;
+
+    SET args = stats_hash.list('keys').join("|");
+
+    SET stats_info = execute( 'StatsBar', 'get_stats', { 'display' => args, 'infinitylang' => 0, 'needshash' => 1, 'format_bytes' => 1} ).data;
+
+    FOR key IN stats_hash.keys;
+        SET stat_info = stats_info.$key;
+        IF stat_info.max == 'unlimited' OR stat_info.max > 0;
+            IF !stats_hash.$key.exists("desc");
+                SET app_info = CPBranding.get_application_from_available_applications(varcache.available_applications, stats_hash.$key.id);
+                stats_hash.$key.desc = app_info.itemdesc;
+                stats_hash.$key.hasURL = 1;
+                stats_hash.$key.href = CPANEL.CPVAR.dprefix _ app_info.url;
+                stats_hash.$key.hasUpgradeURL = varcache.upgrade_app_info.url;
+                stats_hash.$key.upgrade = CPANEL.CPVAR.dprefix _ varcache.upgrade_app_info.url;
+            END;
+            stats_hash.$key.count = stat_info.count;
+            stats_hash.$key.max = display_max_limit(stat_info.max);
+            stats_hash.$key.percent = stat_info.percent;
+            IF stat_info.percent >= 60;
+                stats_hash.$key.needFix = 1;
+            END;
+        ELSE;
+            stats_hash.delete(key);
+        END;
+    END;
+
+    SET stats_list = stats_hash.list('values').sort('id');
+
+%]
+
+[% stats_list.json %]

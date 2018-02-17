@@ -1,0 +1,162 @@
+[%
+SET CPANEL.CPVAR.headerimg = "../images/mailmenu.gif";
+SET CPANEL.CPVAR.dprefix = "../";
+%]
+
+[%
+USE Api2;
+USE CPList;
+USE JSON;
+
+SET ip_result = Api2.exec('DnsLookup', 'name2ip', {'domain' => CPANEL.CPDATA.DNS});
+SET base_domains_result = Api2.exec('DomainLookup','getbasedomains');
+SET cpanel_domains = Api2.exec('ZoneEdit','fetch_cpanel_generated_domains').ofeach('domain').grep('.');
+
+SET domain_ip = ip_result.0.ip || CPANEL.CPDATA.IP;
+-%]
+
+[% js_code = PROCESS js_block %]
+[% WRAPPER '_assets/master.html.tt'
+    app_key = 'simple_zone_editor'
+    include_legacy_stylesheets = 1
+    include_legacy_scripts = 1
+    include_cjt = 1
+    page_stylesheets = [ "css2/zoneedit/dnssec.css" ]
+    page_js = js_code
+    embed_scripts = ["js2/zoneedit/dnssec.js", "js2/zoneedit/simple.js"]
+-%]
+    [% IF CPANEL.feature('simplezoneedit') %]
+    <div class="body-content">
+
+        <p id="descDns" class="description">
+            [% locale.maketext("DNS converts domain names into computer-readable IP addresses. DNS zone files configure domain names to the correct IP addresses. This feature allows you to create and edit these zone files. For more information, read the [output,url,_1,documentation,target,_2,id,_3].", "//go.cpanel.net/SimpleZone", "_blank", "lnkSimpleZoneDocumentation") %]
+        </p>
+
+        <div class="alert alert-warning" id="zone-editor-deprecation-notice">
+            <span class="glyphicon glyphicon-exclamation-sign"></span>
+            <div class="alert-message">
+                [% locale.maketext('[output,strong,Warning:] This interface is deprecated and will be removed in a future release. Use the new [output,url,_1,Zone Editor] to perform the same functions.', '../zone_editor/index.html') %]
+            </div>
+        </div>
+
+        [% IF base_domains_result.size == 1 -%]
+        <input type="hidden" id="domain" value="[% base_domains_result.0.domain FILTER html %]" />
+
+        [% ELSIF base_domains_result.size > 1 -%]
+        <div class="section">
+            <div id="domain_select_exists" style="display: none">
+            </div>
+            <div class="form-group">
+                <label id="lblDomain" for="domain">
+                    [% locale.maketext('Select a domain:') %]
+                </label>
+                <div class="row">
+                    <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                        <select id="domain" class="form-control">
+                            <option value="_select_">[% locale.maketext("You must select a domain.") %]</option>
+                            [% FOR domain_data = base_domains_result -%]
+                            <option value="[% domain_data.domain %]">[% domain_data.domain %]</option>
+                            [% END -%]
+                        </select>
+                    </div>
+                    <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        [% END -%]
+
+        <div id="add_record_and_zone_table" [% IF base_domains_result.size > 1; 'style="display: none"'; END %]>
+
+            <div class="section">
+                <h2 id="hdrAddRecord">[% locale.maketext("Add an A Record") %]</h2>
+                <div class="form-group">
+                    <label id="lblAName" for="A_name">
+                        [% locale.maketext("Name") %]
+                    </label>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                            <input type="text" class="form-control" id="A_name" value="" />
+                        </div>
+                        <div id="A_name_error" class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label id="lblAAddress" for="A_address">
+                        [% locale.maketext("Address") %]
+                    </label>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                            <input type="text" class="form-control" id="A_address" />
+                        </div>
+                        <div id="A_address_error" class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <input type="submit" class="btn btn-primary" id="A_submit" value="[% locale.maketext("Add an A Record") FILTER html %]" id="add_A_record_button" />
+                </div>
+                <span id="add_A_record_status"></span>
+                <div id="add_A_record_status_bar" style="margin:0 -5px" class="cjt_status_bar"></div>
+            </div>
+
+
+            <div class="section">
+                <h2 id="hdrAddCname">[% locale.maketext("Add a CNAME Record") %]</h2>
+                <div class="form-group">
+                    <label id="lblName" for="CNAME_name">
+                        [% locale.maketext("Name") %]
+                    </label>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                            <input type="text" class="form-control" id="CNAME_name" value="" />
+                        </div>
+                        <div id="CNAME_name_error" class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label id="lblCName" for="CNAME_cname">
+                        [% locale.maketext("CNAME") %]
+                    </label>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                            <input type="text" class="form-control" id="CNAME_cname" />
+                        </div>
+                        <div id="CNAME_cname_error" class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <input type="submit" class="btn btn-primary" id="CNAME_submit" value="[% locale.maketext('Add CNAME Record') FILTER html %]" id="CNAME_submit" />
+                </div>
+                <span id="add_CNAME_record_status"></span>
+                <div id="add_CNAME_status_bar" style="margin:0 -5px" class="cjt_status_bar"></div>
+            </div>
+
+            [% IF CPANEL.feature('dnssec') %]
+            <div class="section">
+                <h2 id="hdrDnssec">[% locale.maketext("[asis,DNSSEC]") %]</h2>
+                <div id="dnssec_div"></div>
+                <div id="dnssec_status_bar" class="cjt_status_bar"></div>
+            </div>
+            [% END %]
+
+            <div class="section">
+                <h2 id="hdrUsrDefRec">[% locale.maketext("User-Defined Records") %]</h2>
+                <div id="user_records_div"></div>
+            </div>
+
+        </div><!-- end add_record_and_zone_table -->
+
+    </div><!-- end body-content div -->
+    [% END %]
+[% END #wrapper %]
+
+[% BLOCK js_block %]
+<script type="text/javascript">
+var CPANEL_CONTROLLED_DOMAINS = [% cpanel_domains.json() %];
+</script>
+[% END %]

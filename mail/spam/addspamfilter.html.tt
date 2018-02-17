@@ -1,0 +1,39 @@
+[%
+
+    SET CPANEL.CPVAR.dprefix = "../../";
+
+    Api1.pre_exec("Email", "disable_spam_autodelete");
+    SET disable_autodel_result = Api1.exec("Email", "disable_spam_autodelete", [undef]);
+    Api1.post_exec("Email", "disable_spam_autodelete");
+
+    Api1.pre_exec("Email", "enable_spam_autodelete");
+    SET enable_autodel_result = Api1.exec("Email", "enable_spam_autodelete", [RAW_FORM.score]);
+    Api1.post_exec("Email", "enable_spam_autodelete");
+
+    Api1.pre_exec("Email", "spamstatus");
+    SET spam_status = Api1.exec("Email", "spamstatus", [undef]);
+    Api1.post_exec("Email", "spamstatus");
+
+%]
+
+[% WRAPPER '_assets/master.html.tt'
+    app_key = 'apache_spam_assassin'
+%]
+
+<div class="body-content">
+    <h2 id="hdrEnableAutoDeleteSpam">[% locale.maketext("Enable Auto Delete Spam")  %]</h2>
+    <p id="descCreatingFilter">[% locale.maketext("Creating filter to automatically delete spam.")  %]</p>
+    <pre id="outAutoDelResult">[% disable_autodel_result.html() %] [% enable_autodel_result.html() %]</pre>
+    <div>
+        <!-- [% spam_status.html() %] -->
+        [% IF CPANEL.CPVAR.spamstatus %]
+        <p id="descMessageswithaSpamScore">
+            [% locale.maketext("Messages with a Spam score of “[_1]” or higher will now be automatically deleted.", FORM.score) %]
+        </p>
+        [% ELSE %]
+            <p id="descUnableToCreateAutoDeleteFilter">[% locale.maketext("Unable to create auto-delete filter.")  %]</p>
+        [% END %]
+    </div>
+[% INCLUDE _assets/return_link.html.tt return_location='spam.html' return_link_text=locale.maketext('Go Back') %]
+</div>
+[% END %]

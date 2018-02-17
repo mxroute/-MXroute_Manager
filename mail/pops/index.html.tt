@@ -1,0 +1,275 @@
+[%
+    USE ExpVar;
+    USE Uapi;
+    USE JSON;
+
+    CPANEL.CPVAR.dprefix = "../../",
+    CPANEL.CPVAR.userdefined_quota_default_value = execute("Email", "get_default_email_quota_mib").data;
+    SET has_remote_calcard_feature = CPANEL.feature('caldavcarddav');
+
+    PROCESS '_assets/resource_usage_macro.html.tt';
+
+    # prefer ExpVar over Uapi here as its 1000% faster in this context
+    SET is_horde_installed = ExpVar.expand('$hashorde') ? 1 : 0;
+    SET is_cpdavd_enabled = ExpVar.expand('$hascpdavd') ? 1 : 0;
+    SET has_external_auth_modules_configured = execute("ExternalAuthentication","has_external_auth_modules_configured",{appname=>'webmaild'}).data;
+    SET has_horde_ui = ExpVar.expand('$hashordeui');
+    SET show_calendar_and_contacts_items = is_horde_installed && has_remote_calcard_feature && is_cpdavd_enabled;
+    SET show_config_section =  is_horde_installed && (has_horde_ui  || (has_remote_calcard_feature && is_cpdavd_enabled));
+
+    SET has_popaccts_feature = CPANEL.feature('popaccts');
+
+    IF has_popaccts_feature;
+
+        IF (CPANEL.CPCONF.email_account_quota_userdefined_default_value);
+            SET CPANEL.CPVAR.userdefined_quota_default_value = CPANEL.CPCONF.email_account_quota_userdefined_default_value.html();
+        END;
+
+        IF !(CPANEL.CPCONF.email_account_quota_default_selected == "unlimited");
+            SET CPANEL.CPVAR.default_quota_selected = "userdefined";
+        END;
+
+        IF !(CPANEL.CPVAR.default_quota_selected);
+            SET CPANEL.CPVAR.default_quota_selected = "unlimited";
+        END;
+
+        # list domains
+        SET list_mail_domains =  execute("Email", "list_mail_domains", {} );
+        SET CPANEL.CPVAR.maildomainscount = list_mail_domains.data.size();
+
+        # Fetch the required strength
+        SET required_strength_resp = execute("PasswdStrength", "get_required_strength", {"app"=>"pop"} );
+
+        IF required_strength_resp.size();
+            SET required_strength = required_strength_resp.data.strength;
+        END;
+
+        SET resource_stats = execute('StatsBar', 'get_stats', {
+            "display" => 'emailaccounts',
+            "infinitylang" => 1,
+            "warnings" => 1,
+            "warninglevel" => 80,
+            "warnout" => 1,
+        }).data;
+
+        IF resource_stats.size();
+            IF resource_stats.0;
+                SET accounts_are_maxed = resource_stats.0.is_maxed;
+            END;
+        END;
+
+        SET templates = [
+            "views/listEmailAccounts.ptt",
+            "views/changePasswordModule.ptt",
+            "views/changeQuotaModule.ptt",
+            "views/deleteModule.ptt"
+        ];
+
+        IF !accounts_are_maxed;
+            templates.push("views/addEmailAccount.ptt");
+        END;
+
+        IF CPANEL.feature('defaultaddress');
+            templates.push("views/defaultAccount.ptt");
+        END;
+
+        IF show_config_section;
+            templates.push("views/configurationOptions.ptt");
+        END;
+
+        SET emailAccountsNVData = execute('NVData', 'get', { names = 'CSSS_cpanel_email_accounts' }).data;
+
+    END;
+
+    SET debug = CPANEL.is_debug_mode_enabled();
+
+    # Lookup locale strings once for all of the templates
+    SET LANG = {
+        email_description = locale.maketext("Manage the email accounts associated with your domain. Use the [output,em,Set Up Mail Client] interface to add an email account to your mobile device or desktop email client. For more information, read the [output,url,_1,documentation,target,_2,id,_3].", "//go.cpanel.net/Accounts", "_blank", "lnkAccountsDocumentation"),
+        add_email_account = locale.maketext("Add Email Account"),
+        email = locale.maketext("Email"),
+        mailbox_name_required = locale.maketext("You must enter a mailbox name."),
+        mailbox_name_maxlength = locale.maketext("The mailbox name cannot exceed [numf,_1] characters.", 64),
+        email_address_maxlength = locale.maketext("The email address cannot exceed [numf,_1] characters.", 254),
+        mailbox_name_allowed_chars = locale.maketext("You can only enter letters, numbers, periods, hyphens, and underscores."),
+        mailbox_name_safe_periods = locale.maketext("The mailbox name cannot start with a period, end with a period, or include two consecutive periods."),
+        domain = locale.maketext("Domain"),
+        password = locale.maketext("Password"),
+        enter_a_password = locale.maketext('Enter a Password'),
+        password_minlength = locale.maketext('Passwords must be at least [quant,_1,character,characters] long.', 5),
+        password_required = locale.maketext('Password cannot be empty.'),
+        stronger_password = locale.maketext('You [output,strong,must] enter a stronger password.'),
+        password_again = locale.maketext("Password (Again)"),
+        password_no_match = locale.maketext('Passwords do not match.'),
+        mailbox_quota = locale.maketext("Mailbox Quota"),
+        mailbox_maxquota = locale.maketext("Quotas cannot exceed [format_bytes,_1].", execute("Email", "get_max_email_quota").data),
+        quota_required = locale.maketext("Quota must be a number or you must set the quota to either a number or [output,em,unlimited]."),
+        quota_positive = locale.maketext("Quota must be a positive integer."),
+        unlimited = locale.maketext("Unlimited"),
+        create_account = locale.maketext("Create Account"),
+        creating_account = locale.maketext("Creating account …"),
+        send_welcome_email = locale.maketext("Send welcome email with mail client configuration instructions."),
+        retype_password = locale.maketext("Re-type Password"),
+        enter_an_account_name = locale.maketext("Enter an Account Name"),
+
+        unsuspend_login = locale.maketext("Unsuspend Login"),
+        suspend_login = locale.maketext("Suspend Login"),
+        unsuspend_incoming = locale.maketext("Unsuspend Incoming Mail"),
+        suspend_incoming = locale.maketext("Suspend Incoming Mail"),
+        manage_external_authentication = locale.maketext("Manage External Authentication"),
+        manage_disk_usage = locale.maketext("Manage Disk Usage"),
+        delete = locale.maketext("Delete"),
+        email_accounts = locale.maketext("Email Accounts"),
+        account = locale.maketext("Account"),
+        usage = locale.maketext("Usage"),
+        quota = locale.maketext("Quota"),
+        actions = locale.maketext("Actions"),
+        loading_accounts = locale.maketext("Loading Accounts"),
+        no_email_accounts_found = locale.maketext("No email accounts found."),
+        more = locale.maketext("More"),
+        set_up_email_client = locale.maketext("Set Up Mail Client"),
+        configure_calcard_client = locale.maketext("Configure Calendars and Contacts"),
+        access_webmail = locale.maketext("Access Webmail"),
+        change_password = locale.maketext("Change Password"),
+
+        default_account_reject_or_forward = locale.maketext("[output,strong,Note:] Your default account has been set to either reject incoming email or forward it to another account."),
+        default_account_destination = locale.maketext("Check [output,url,_1,Default Address] for the destination of default mail for this domain.", "def.html"),
+        default_email_account = locale.maketext("Default Email Account"),
+        default_account_help_text = locale.maketext("The default email account is used to catch mail that is unrouted. The username and password of the default account is the same as your cPanel account login. The default account cannot be deleted and has no quota."),
+
+        configuration_options = locale.maketext('Configuration Options'),
+        shared_address_book = locale.maketext('Shared Address Book'),
+        enable_shared_address_book = locale.maketext('Enable Shared Address Book'),
+        disable_shared_address_book = locale.maketext('Disable Shared Address Book'),
+        on = locale.maketext('On'),
+        off = locale.maketext('Off'),
+        shared_address_description = locale.maketext('Every [asis,cPanel] account includes a system-managed Shared Address Book that serves as a user directory and allows collaboration. All of the email accounts listed above can access the Shared Address Book. If disabled, only the Default Email Account can access the Shared Address Book. Therefore, other users cannot access the Shared Address Book for contact information or for automatic calendar availability.'),
+
+        save = locale.maketext("Save"),
+        cancel = locale.maketext("Cancel"),
+        delete_email = locale.maketext("Delete “[_1]”?"),
+
+        # These next ones aren't used directly, they're passed to an Angular filter, but we need the locale tool to pick them up:
+        allow_email_to_login = locale.maketext("Allow “[_1]” to log in."),
+        suspend_emails_logins = locale.maketext("Suspend “[_1]”’s logins."),
+        allow_email_to_receive_mail = locale.maketext("Allow “[_1]” to receive mail."),
+        suspend_email_from_receiving_mail = locale.maketext("Suspend “[_1]” from receiving mail."),
+        access_webmail_for_email = locale.makeText("Access Webmail for “[_1]”."),
+        manage_external_authentication_for_email = locale.maketext("Manage external authentication for “[_1]”."),
+        configure_calendar_and_contacts_for_email = locale.maketext("Configure calendars and contacts for “[_1]”."),
+        manage_disk_usage_for_email = locale.maketext("Manage disk usage for “[_1]”."),
+        setup_mail_client_for_email = locale.maketext("Set Up Mail Client for “[_1]”"),
+        delete_email = locale.maketext("Delete “[_1]”"),
+        change_quota_for_email = locale.maketext("Change quota for “[_1]”."),
+        change_password_for_email = locale.maketext("Change password for “[_1]”."),
+
+        mb = locale.maketext("[output,abbr,MB,Megabytes]")
+    };
+
+    # Set these outside the hash initialization to avoid double lookup of column titles
+    LANG.sort_by_account = locale.maketext("Sort by “[_1]”.", LANG.account);
+    LANG.sort_by_domain = locale.maketext("Sort by “[_1]”.", LANG.domain);
+    LANG.sort_by_usage = locale.maketext("Sort by “[_1]”.", LANG.usage);
+    LANG.sort_by_quota = locale.maketext("Sort by “[_1]”.", LANG.quota);
+    LANG.sort_by_percent_used = locale.maketext("Sort by “[_1]”.", locale.maketext("Percent Used"));
+
+    SET page_styles_list = ['mail/pops/index.css'];
+    SET embeded_styles_list = [];
+
+    IF !CPANEL.ua_is_mobile;
+        embeded_styles_list.push("css/angular-chosen-spinner.css");
+        page_styles_list.push("libraries/chosen/1.5.1/chosen.min.css");
+    END;
+
+-%]
+[% js_code = PROCESS js_block %]
+[% WRAPPER '_assets/master.html.tt'
+    app_key = 'email_accounts'
+    page_js = js_code
+    include_legacy_stylesheets = 0
+    include_legacy_scripts = 0
+    include_cjt = 0
+    use_master_bootstrap = 0
+    page_stylesheets = page_styles_list
+    embed_stylesheets = embeded_styles_list
+    focus_feature_search = 1
+    optimized = debug
+-%]
+<div id="body-content" class="body-content">
+[% IF has_popaccts_feature %]
+    <p id="descEmailAccounts" class="description">
+        [%-
+            IF (CPANEL.CPVAR.item('maildomainscount') >= "1");
+                LANG.email_description;
+            END
+        -%]
+    </p>
+        <div ng-controller="baseController" ng-cloak>
+            <div ng-if="showAddAccount" ng-include="'views/addEmailAccount.ptt'"></div>
+            <div ng-if="!showAddAccount" class="section">
+                <h3 id="hdrAddEmailAccount">[% LANG.add_email_account %]</h3>
+                [%
+                    # Note: a MACRO was not used here because we need to be able
+                    # to access resource_usage_limits after the block runs
+                    SET resource_usage_key = 'emailaccounts';
+                    SET resource_usage_percent_used_to_warn = 80;
+                    PROCESS resource_usage_block;
+                %]
+            </div>
+            <div ng-include="'views/listEmailAccounts.ptt'"></div>
+            <div ng-if="showDefaultAccount" ng-include="'views/defaultAccount.ptt'"></div>
+            <div ng-if="showConfigSection" ng-controller="configurationOptionsCtrl" ng-include="'views/configurationOptions.ptt'"></div>
+        </div>
+
+        [% FOREACH ptt IN templates %]
+        <script id="[% ptt %]" type="text/ng-template">
+            [%- PROCESS $ptt
+                LANG
+            -%]
+        </script>
+        [% END %]
+
+        <div growl id="growl_container"></div>
+
+    [% PROCESS '_assets/cjt2_header_include.tt' %]
+
+[% ELSE %]
+    [%  Api1.exec("include", ["../../refresh.html"]) %]
+[% END %]
+
+</div><!-- end body-content div -->
+[% END #wrapper %]
+
+[% BLOCK js_block %]
+<script type="text/javascript">
+if (!window.PAGE) {
+    window.PAGE = {};
+}
+
+[% IF CPANEL.feature('webmail') -%]
+window.PAGE.webmailEnabled = true;
+[% ELSE %]
+window.PAGE.webmailEnabled = false;
+[% END -%]
+
+[%- IF emailAccountsNVData.0.value -%]
+window.PAGE.nvdata = JSON.parse([%- JSON.stringify(emailAccountsNVData.0.value) -%]);
+[%- END -%]
+window.PAGE.accountsAreMaxed = [%- accounts_are_maxed ? 'true' : 'false' -%];
+window.PAGE.mailAccountsCount = parseInt('[%- mail_accounts_count -%]');
+window.PAGE.mailDomains = [%- JSON.stringify(list_mail_domains.data) -%];
+window.PAGE.showConfigSection = [% show_config_section == 1 ? 'true' : 'false' %];
+window.PAGE.showCalendarAndContactItems = [% show_calendar_and_contacts_items ? 'true' : 'false' %];
+window.PAGE.requiredPasswordStrength = [% required_strength ? required_strength : 0 %];
+window.PAGE.externalAuthModulesConfigured = [%- has_external_auth_modules_configured ? 'true' : 'false' -%];
+window.PAGE.emailDiskUsageEnabled = [%- CPANEL.feature('email_disk_usage') ? 'true' : 'false' -%];
+window.PAGE.defaultQuotaSelected = '[% CPANEL.CPVAR.default_quota_selected.html() %]';
+window.PAGE.defaultAccountEnabled = [%- CPANEL.feature('defaultaddress') ? 'true' : 'false' -%];
+
+[%-# CPANEL-2362: .json() will turn a number into a string, so we need to convert it to a number -%]
+window.PAGE.userDefinedQuotaDefaultValue = parseInt([% CPANEL.CPVAR.userdefined_quota_default_value.json() %]);
+window.PAGE.maxEmailQuota = parseInt([% execute("Email", "get_max_email_quota_mib").data.json() %]);
+
+window.PAGE.isRTL = document.getElementsByTagName("HTML")[0].getAttribute("dir") === "rtl";
+</script>
+[% END #js_block %]

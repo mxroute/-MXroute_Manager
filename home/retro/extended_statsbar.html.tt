@@ -1,0 +1,118 @@
+[%-
+USE Master;
+
+SET hasPostGres = ExpVar.expand('$haspostgres'),
+    hasDiskUsageIncludeSQLdbs = CPANEL.CPCONF.disk_usage_include_sqldbs,
+    hasDiskUsageIncludeMailman = CPANEL.CPCONF.disk_usage_include_mailman,
+    isMailOnlyTheme = CPANEL.CPVAR.mailonlytheme,
+    statsPostgres = { data = ''},
+    statsDiskUsageDBs = { data = ''},
+    statsDiskUsageMailman = { data = ''};
+
+IF isMailOnlyTheme;
+    SET stats = execute( 'StatsBar', 'get_stats', { 'display' => 'emailac_counts|mailinglists|autoresponders|emailforwarders', 'infinitylang' => 'true' } );
+ELSE;
+    SET stats = execute( 'StatsBar', 'get_stats', { 'display' => 'emailac_counts|mailinglists|addondomains|subdomains|parkeddomains|ftpaccounts|sqldatabases|mysqldatabases', 'infinitylang' => 'true' } );
+END;
+
+IF hasPostGres AND NOT isMailOnlyTheme;
+    statsPostgres = execute( 'StatsBar', 'get_stats', { 'display' => 'postgresqldatabases', 'infinitylang' => 'true' } );
+END;
+
+IF hasDiskUsageIncludeSQLdbs;
+    statsDiskUsageDBs = execute( 'StatsBar', 'get_stats', { 'display' => 'cachedmysqldiskusage|cachedpostgresdiskusage' } );
+END;
+
+IF hasDiskUsageIncludeMailman;
+    statsDiskUsageMailman = execute( 'StatsBar', 'get_stats', { 'display' => 'cachedlistdiskusage' } );
+END;
+-%]
+
+[%  MACRO set_bar_class(test_percent)
+    BLOCK;
+        IF test_percent >= 80;
+            'progress-bar progress-bar-danger';
+        ELSIF test_percent >= 60;
+            'progress-bar progress-bar-warning';
+        ELSIF test_percent >= 40;
+            'progress-bar progress-bar-info';
+        ELSE;
+            'progress-bar progress-bar-success';
+        END;
+    END
+%]
+
+<table id="stats_extended" class="truncate-table">
+
+    [% FOREACH stat IN stats.data %]
+       <tr id="stats_[% stat.id %]_row">
+            <td class="stats_left" id="stats_[% stat.id %]_text">
+                [% stat.item %]
+            </td>
+            <td class="stats_right">
+            [% IF stat.id == "mysqldatabases" %]
+                <span id="stats_[% stat.id %]_count">[% stat.count %]</span>
+            [% ELSE %]
+                <div>
+                    <span id="stats_[% stat.id %]_count">[% stat.count %]</span> /
+                    <span id="stats_[% stat.id %]_max">[% stat.max %]</span>
+                    [% IF stat.percent >= 80 && varcache.upgrade_app_info %]
+                      <a class="lnkInlinePrefUpgrade" href="[%- CPANEL.CPVAR.dprefix _ varcache.upgrade_app_info.url -%]">
+                        [%- varcache.upgrade_app_info.itemdesc -%]
+                      </a>
+                    [% END %]
+                </div>
+                <div class="progress">
+                    <div id="stats_[% stat.id %]_percent" class="[% set_bar_class(stat.percent) %]" role="progressbar" aria-valuenow="[% stat.percent %]" aria-valuemin="0" aria-valuemax="100" title="[% stat.percent %]%" style="width: [% stat.percent %]%;">
+                    </div>
+                <div>
+
+
+            [% END %]
+            </td>
+        </tr>
+    [% END %]
+
+    [% FOREACH stat IN statsPostgres.data %]
+        <tr id="stats_[% stat.id %]_row">
+            <td id="stats_[% stat.id %]_text" class="stats_left">
+                [% stat.item %]
+            </td>
+            <td id="stats_[% stat.id %]_count" class="stats_right">
+                [% stat.count %]
+            </td>
+        </tr>
+    [% END %]
+
+    [% FOREACH stat IN statsDiskUsageDBs.data %]
+        <tr id="stats_[% stat.id %]_row">
+            <td id="stats_[% stat.id %]_text" class="stats_left">
+                [% stat.item %]
+            </td>
+            <td class="stats_right" id="stats_[% stat.id %]_count">
+                [% stat.count %] [%stat.units %]
+            </td>
+        </tr>
+    [% END %]
+
+    [% FOREACH stat IN statsDiskUsageMailman.data %]
+        <tr id="stats_[% stat.id %]_row">
+            <td id="stats_[% stat.id %]_text" class="stats_left">
+                [% stat.item %]
+            </td>
+            <td id="stats_[% stat.id %]_count" class="stats_right">
+                [% stat.count %] [% stat.units %]
+            </td>
+        </tr>
+    [% END %]
+
+    [% IF CPANEL.feature("serverstatus") %]
+    <tr>
+        <td class="stats_left" colspan="2">
+            <a href="home/status.html" id="lnkServerInfo" alt='[% locale.maketext("Server Information") %]'>
+                [% locale.maketext("Server Information") %]
+            </a>
+        </td>
+    </tr>
+    [% END %]
+</table>

@@ -1,0 +1,197 @@
+<div id="popsAccountList" ng-controller="listEmailAccountsCtrl" class="section">
+  <h3 id="hdrEmailAccounts">[% LANG.email_accounts  %]</h3>
+  <div class="row search-page-container"
+    ng-class="getSearchClass()">
+      <div class="col-xs-12 col-sm-12 col-md-4 col-lg-4">
+          <search id="email_table_search" ng-model="meta.filterValue" ng-change="searchList()"></search>
+      </div>
+      <div class="col-xs-12 col-sm-12 col-md-8 col-lg-8">
+          <div class="pagination-container hidden-xs hidden-sm">
+              <page-size id="email_table_items_per_page"
+                  allowed-sizes="meta.pageSizes"
+                  total-items="meta.totalItems"
+                  ng-model="meta.pageSize"
+                  show-all="false"
+                  ng-show="showPager"
+                  ng-change="selectPageSize()">
+              </page-size>
+              <uib-pagination id="email_table_paginate"
+                  total-items="meta.totalItems"
+                  ng-model="meta.currentPage"
+                  max-size="3"
+                  boundary-links="true"
+                  rotate="false"
+                  previous-text="<"
+                  next-text=">"
+                  first-text="<<"
+                  last-text=">>"
+                  items-per-page="meta.pageSize"
+                  ng-show="showPager"
+                  ng-change="selectPage()">
+              </uib-pagination>
+          </div>
+      </div>
+  </div>
+  <table id="accounts_table" class="table table-striped-child responsive-table">
+    <thead>
+        <tr>
+            <th class="col-sm-5 col-md-5 col-lg-5">
+                <a toggle-sort sort-meta="meta" sort-field="user" onSort="sortList" title="[% LANG.sort_by_account %]">[% LANG.account %]</a>
+                <span>@</span>
+                <a toggle-sort sort-meta="meta" sort-field="domain" onSort="sortList" title="[% LANG.sort_by_domain %]">[% LANG.domain %]</a>
+            </th>
+            <th class="col-sm-2 col-md-2 col-lg-2">
+                <a toggle-sort sort-meta="meta" sort-field="_diskused" onSort="sortList" title="[% LANG.sort_by_usage %]">[% LANG.usage %]</a>
+                <span>/</span>
+                <a toggle-sort sort-meta="meta" sort-field="_diskquota" onSort="sortList" title="[% LANG.sort_by_quota %]">[% LANG.quota %]</a>
+                <span>/</span>
+                <a toggle-sort sort-meta="meta" sort-field="diskusedpercent" onSort="sortList" title="[% LANG.sort_by_percent_used %]">%</a>
+            </th>
+            <th class="col-sm-5 col-md-5 col-lg-5"><span>[% LANG.actions %]</span></th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr ng-repeat-start="emailAccount in filteredList track by $index" id="account_row_{{$index}}" ng-class="{ 'disappearing-table-row': expandedAccount === emailAccount && emailAccount.deleting }" ng-if="!emailAccount.deleted">
+            <td id="accountCell" data-title="[%- LANG.account -%]@[%- LANG.domain -%]">
+                <span class="col-sm-1 fa-stack fa-lg" title="{{ emailAccount | loginSuspendedTooltip }}">
+                     <span class="fa fa-upload fa-stack-1x"></span>
+                     <span class="fa fa-ban fa-stack-2x text-danger" ng-if="emailAccount.suspended_login"></span>
+                </span>
+                <span class="col-sm-1 fa-stack fa-lg" title="{{ emailAccount | incomingSuspendedTooltip }}">
+                     <span class="fa fa-download fa-stack-1x"></span>
+                     <span class="fa fa-ban fa-stack-2x text-danger" ng-if="emailAccount.suspended_incoming"></span>
+                </span>
+                <span class="col-sm-10" title="{{ emailAccount.email }}">{{ emailAccount.email }}</span>
+            </td>
+            <td data-title="[%- LANG.usage -%]/[%- LANG.quota -%]/%">
+                <div>
+                    <span>{{ emailAccount.diskused }}</span>
+                    <input type="hidden" id="diskused_{{$index}}" value="{{emailAccount.diskused}}">
+                    <span>/</span>
+                    <span id="quota_{{$index}}" ng-bind-html="emailAccount.humandiskquota"></span>
+                    <span class="megabyte_font">[%- LANG.mb -%]</span>
+                </div>
+                <div>
+                    <uib-progressbar ng-if="emailAccount.diskquota !== 0 && emailAccount.diskquota !== 'unlimited'"
+                        type="{{ emailAccount.diskusedpercent | quotaProgressType }}"
+                        max="emailAccount.diskquota"
+                        value="emailAccount.diskused"
+                        title="{{ emailAccount.humandiskusedpercent  }}">
+                        <span class="sr-only">{{ emailAccount.humandiskusedpercent }}</span>
+                    </uib-progressbar>
+                </div>
+                <!--span>/</span>
+                <span>{{ emailAccount.diskusedpercent }}</span-->
+            </td>
+            <td>
+                <a class="btn btn-link" ng-click="onClickPassword(emailAccount)" href="javascript:void(0)" title="{{ emailAccount.email | emailLocaleString:'Change password for “[_1]”' }}">
+                    <span class="fa fa-key fa-lg"></span>
+                    [% LANG.password %]
+                </a>
+                <a class="btn btn-link" ng-click="onClickQuota(emailAccount)" href="javascript:void(0)" title="{{ emailAccount.email | emailLocaleString:'Change quota for “[_1]”' }}">
+                    <span class="glyphicon glyphicon-pencil"></span>
+                    [% LANG.quota %]
+                </a>
+                <a class="btn btn-link" ng-click="onClickDelete(emailAccount)" href="javascript:void(0)" title="{{ emailAccount.email | emailLocaleString:'Delete “[_1]”' }}">
+                    <span class="glyphicon glyphicon-trash"></span>
+                    [% LANG.delete %]
+                </a>
+                <div id="email_table_menu_{{$index}}" class="btn-group" ng-class="{ 'dropup': isDropUp }" ng-cloak uib-dropdown>
+                    <button id="email_table_menu_button_{{$index}}" type="button" class="btn btn-default dropdown-toggle" ng-click="onMenuToggle($index)" uib-dropdown-toggle>[% LANG.more %] <span class="fa fa-fw fa-caret-down"></span></button>
+                    <ul class="dropdown-menu dropdown-menu-left" role="menu">
+                        <li ng-if="emailAccount.suspended_login === emailAccount.suspended_incoming">
+                            <a title="{{ emailAccount | loginIncomingTooltip }}" href="{{ emailAccount | loginIncomingHref }}">{{ emailAccount | loginIncomingText }}</a>
+                        </li>
+                        <li ng-if="emailAccount.suspended_login">
+                            <a title="{{ emailAccount.email | emailLocaleString:'Allow “[_1]” to log in.' }}" href="{{ emailAccount.email | landingPageHref:'unsuspend_login' }}">[% LANG.unsuspend_login %]</a>
+                        </li>
+                        <li ng-if="!emailAccount.suspended_login">
+                            <a title="{{ emailAccount.email | emailLocaleString:'Suspend “[_1]”’s logins.' }}" href="{{ emailAccount.email | landingPageHref:'suspend_login' }}">[% LANG.suspend_login %]</a>
+                        </li>
+                        <li ng-if="emailAccount.suspended_incoming">
+                            <a title="{{ emailAccount.email | emailLocaleString:'Allow “[_1]” to receive mail.' }}" href="{{ emailAccount.email | landingPageHref:'unsuspend_incoming' }}">[% LANG.unsuspend_incoming %]</a>
+                        </li>
+                        <li ng-if="!emailAccount.suspended_incoming">
+                            <a title="{{ emailAccount.email | emailLocaleString:'Suspend “[_1]” from receiving mail.' }}" href="{{ emailAccount.email | landingPageHref:'suspend_incoming' }}">[% LANG.suspend_incoming %]</a>
+                        </li>
+                        <li ng-if="webmailEnabled">
+                            <a id="email_table_menu_webmail_{{$index}}" title="{{ emailAccount.email | emailLocaleString:'Access Webmail for “[_1]”.' }}" href="../webmailform.html?user={{ emailAccount.email | encodeURIComponent }}&amp;domain={{ emailAccount.domain | encodeURIComponent }}" target="_blank">[% LANG.access_webmail %]</a>
+                        </li>
+                        <li ng-if="externalAuthConfig">
+                            <a title="{{ emailAccount.email | emailLocaleString:'Manage external authentication for “[_1]”.' }}" id="email_table_menu_manage_external_auth_{{$index}}" href="../authentication/manage.html#/{{ emailAccount.email | encodeURIComponent }}" target="_blank">[% LANG.manage_external_authentication %]</a>
+                        </li>
+                        <li ng-if="showCalAndContacts">
+                            <a title="{{ emailAccount.email | emailLocaleString:'Configure calendars and contacts for “[_1]”.' }}" href="../calendars_and_contacts/index.html.tt?user={{ emailAccount.email | encodeURIComponent }}" target="_blank">[% LANG.configure_calcard_client %]</a>
+                        </li>
+                        <li ng-if="emailDiskUsageEnabled">
+                            <a title="{{ emailAccount.email | emailLocaleString:'Manage disk usage for “[_1]”.' }}" href="../manage_disk_usage/?account={{ emailAccount.email | encodeURIComponent }}" target="_blank">[% LANG.manage_disk_usage %]</a>
+                        </li>
+                    </ul>
+                </div>
+            </td>
+        </tr>
+        <tr ng-repeat-end id="dt_module_row_{{$index}}">
+            <td colspan="3" class="actions-cell">
+                <div class="action-module" ng-if="expandedAccount === emailAccount && actionModule === 'password'"
+                    id="change_password_module_{{$index}}"
+                    ng-include="'views/changePasswordModule.ptt'"></div>
+                <div class="action-module" ng-if="expandedAccount === emailAccount && actionModule === 'quota'"
+                    id="change_quota_module_{{$index}}"
+                    ng-include="'views/changeQuotaModule.ptt'"></div>
+                <div class="action-module" ng-if="expandedAccount === emailAccount && actionModule === 'delete'"
+                    id="delete_module_{{$index}}"
+                    ng-include="'views/deleteModule.ptt'"></div>
+                <div id="status_bar_{{$index}}" ng-if="emailAccount.status" class="status-bar">
+                    <cp:alert ng-model="emailAccount.status" on-close="clearStatus()" auto-close="emailAccount.status.closeable ? emailAccount.status.ttl : null"></cp:alert>
+                </div>
+            </td>
+        </tr>
+        <tr ng-hide="!loadingEmailAccounts">
+            <td colspan="3">
+                <cp-loading-panel>
+                    <span>[% LANG.loading_accounts %]</span>
+                </cp-loading-panel>
+            </td>
+        </tr>
+        <tr ng-hide="filteredList.length > 0 || loadingEmailAccounts">
+            <td colspan="3">
+                <span>[% LANG.no_email_accounts_found %]</span>
+            </td>
+        </tr>
+    </tbody>
+  </table>
+    <div class="row hidden-md hidden-lg">
+        <div class="col-xs-12">
+            <p class="text-right" ng-hide="!meta.mobileItemCountText">{{ meta.mobileItemCountText }}</p>
+        </div>
+    </div>
+    <div class="row search-page-container visible-xs-block visible-sm-block hidden-md hidden-lg">
+        <div class="col-xs-12 col-sm-12">
+            <div class="pagination-container">
+                <page-size id="email_table_items_per_page_mobile"
+                    allowed-sizes="meta.pageSizes"
+                    total-items="meta.totalItems"
+                    ng-model="meta.pageSize"
+                    show-all="false"
+                    ng-show="showPager"
+                    ng-change="selectPageSize()">
+                </page-size>
+                <uib-pagination id="email_table_paginate_mobile"
+                    total-items="meta.totalItems"
+                    ng-model="meta.currentPage"
+                    max-size="0"
+                    boundary-links="true"
+                    rotate="false"
+                    previous-text="<"
+                    next-text=">"
+                    first-text="<<"
+                    last-text=">>"
+                    items-per-page="meta.pageSize"
+                    ng-show="showPager"
+                    ng-change="selectPage()"
+                    class="pagination-small">
+                </uib-pagination>
+            </div>
+        </div>
+    </div>
+</div>

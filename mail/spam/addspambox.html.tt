@@ -1,0 +1,33 @@
+[%
+
+    SET CPANEL.CPVAR.dprefix = "../../";
+
+    Api1.pre_exec("Email", "addspambox");
+    SET addspambox_result = Api1.exec("Email", "addspambox", [undef]);
+    Api1.post_exec("Email", "addspambox");
+
+    Api1.pre_exec("Email", "spamboxstatus");
+    SET spamboxstatus_result = Api1.exec("Email", "spamboxstatus", [undef]);
+    Api1.post_exec("Email", "spamboxstatus");
+
+%]
+
+[% WRAPPER '_assets/master.html.tt'
+    app_key = 'apache_spam_assassin'
+%]
+
+<div class="body-content">
+    <h2>[% locale.maketext("Spam Box")  %]</h2>
+
+    [% addspambox_result.html() %]
+    <!-- [%  %] -->
+    [% IF CPANEL.CPVAR.spamboxenabled %]
+    <p>[% locale.maketext("Spam Box is now [output,class,enabled,status].")  %]</p>
+    [% ELSE %]
+    <p>[% locale.maketext("Unable to create Spam Box.") %]</p>
+    [% END %]
+
+    [% INCLUDE _assets/return_link.html.tt return_location='spam.html' return_link_text=locale.maketext('Go Back') %]
+
+</div>
+[% END %]

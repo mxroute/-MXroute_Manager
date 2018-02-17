@@ -1,0 +1,16 @@
+<div class="modal-header">
+    <h3 class="modal-title" id="updateModalLabel">[% locale.maketext("Restore From Backup") %]</h3>
+</div>
+<div class="modal-body">
+    <p>[% locale.maketext("Are you sure you want to restore this file?") %]</p>
+    <div class="checkbox" ng-show="fileExists">
+        <label>
+            <input type="checkbox" ng-model="overwrite">
+            [% locale.maketext("Overwrite existing file?") %]
+        </label>
+    </div>
+</div>
+<div class="modal-footer">
+    <button id="cancelButton" class="btn btn-link" ng-click="closeModal()">[% locale.maketext("Cancel") %]</button>
+    <button id="confirmRestoreButton" class="btn btn-primary" ng-click="runIt()" ng-disabled="fileExists && !overwrite">[% locale.maketext("Restore") %]</button>
+</div>

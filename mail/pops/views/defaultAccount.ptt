@@ -1,0 +1,41 @@
+<div class="section" ng-controller="defaultAccountCtrl" ng-cloak class="ng-cloak">
+[% IF CPANEL.feature('defaultaddress') %]
+    [% IF (CPANEL.CPVAR.maindiscard == "1") %]
+        <span id="descDefaultAccountWillRejectOrForward">[% LANG.default_account_reject_or_forward %]</span>
+        [% LANG.default_account_destination %]
+    [% ELSE %]
+        <h3 id="hdrDefaultEmailAccount">[% LANG.default_email_account %]</h3>
+        <p id="default_account_help_text" class="description">
+            [% LANG.default_account_help_text %]
+        </p>
+        <table id="defaultAccountTable" class="table table-striped responsive-table">
+            <thead>
+                <tr>
+                    <th id="lblDefaultEmailAccountAccount">[% LANG.account %]</th>
+                    <th id="lblDefaultEmailAccountUsage">[% LANG.usage %]</th>
+                    <th id="lblDefaultEmailAccountActions">[% LANG.actions %]</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td id="lblUserName">[% CPANEL.user %]</td>
+                    <td><span id="default_account_disk_used">{{ defaultAccountDiskUsed || '...' }}</span></td>
+                    <td>
+                        [% IF ExpVar.expand('$isoverridelogin') %]
+                        <a id="lnkDefaultAccountAccessWebmail" class="btn btn-link" href="../webmailform.html?user=[% CPANEL.user %]"><span class="fa fa-external-link fa-lg"></span>[% LANG.access_webmail %]</a>
+                        [% END %]
+                        [%  IF !ExpVar.expand('$isoverridelogin') %]
+                            <a id="lnkDefaultAccountAccessWebmail" class="btn btn-link" href="../../webmaillogin.html?user=[% CPANEL.user %]" target="_blank"> <span class="fa fa-external-link fa-lg"></span>[% LANG.access_webmail %]</a>
+                        [% END %]
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    [% END %]
+[% END %]
+
+    <div id="security_policy_enabled" style="display: none">
+        [% IF (CPANEL.CPCONF.item('SecurityPolicy::SourceIPCheck') == "disable" ? 0 : CPANEL.CPCONF.item('SecurityPolicy::SourceIPCheck')) %]1[% END %]
+    </div>
+
+</div>

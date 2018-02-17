@@ -1,0 +1,36 @@
+[%
+# Arguments
+# meta   - hash -
+#   specialfunctions - hash
+# vendor - hash -
+#    name - string - vendor name
+# environment - hash
+#    script_name   - string - name of the script
+#    called_from_root - boolean
+# module - hash -
+#    name - string
+# setttings - hash -
+#    no_modified_cpanel - boolean
+#    no_3rd_party       - boolean
+#
+%]
+
+[% IF meta.specialfunctions;
+    FOR action IN meta.specialfunctions.keys.sort;
+        SET fn_url = to_uri( environment, 'addon=' _ module.name _ '&action=' _ action);
+%]
+<p>
+    <a href="[% fn_url %]" id="special_[% slugify(meta.specialfunctions.$action.name, '_')%]">
+        [% meta.specialfunctions.$action.name %]
+    </a>
+</p>
+[%  END %]
+[% END %]
+
+[% IF !environment.called_from_root;
+    SET back_url = to_uri( environment, 'changevendor=' _ vendor.name );
+%]
+<p align="center">
+    [<a id="main" href="[% back_url | url %]">[% locale.maketext('Main') %]</a>]
+</p>
+[% END %]

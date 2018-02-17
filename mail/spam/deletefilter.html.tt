@@ -1,0 +1,26 @@
+[%
+    SET CPANEL.CPVAR.dprefix = "../../";
+
+    Api1.pre_exec("Email", "disable_spam_autodelete");
+    SET disable_autodel_result = Api1.exec("Email", "disable_spam_autodelete", [undef]);
+    Api1.post_exec("Email", "disable_spam_autodelete");
+
+%]
+
+[% WRAPPER '_assets/master.html.tt'
+    app_key = 'apache_spam_assassin'
+%]
+
+<div class="body-content">
+    <h2 id="hdrSpamAutoDelete">[% locale.maketext("Spam Auto Delete")  %]</h2>
+
+    <div id="spamAutoDeleteIsNow" class="alert alert-success">
+        <span id="spamAutoDeleteIsNowImg" class="glyphicon glyphicon-ok-sign"></span>
+        <div id="spamAutoDeleteIsNowMsg" class="alert-message">
+            [% locale.maketext("Spam Auto Delete is now [output,class,disabled,status]")  %]
+        </div>
+    </div>
+
+    [% INCLUDE _assets/return_link.html.tt return_location='spam.html' return_link_text=locale.maketext('Go Back') %]
+</div>
+[% END %]

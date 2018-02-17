@@ -1,0 +1,65 @@
+<form name="changeQuotaForm" novalidate>
+    <div class="form-group">
+        <span style="display: none"></span>
+        <label for="quota_number_input_{{$index}}">
+            [% LANG.mailbox_quota  %]
+        </label>
+        <div class="row">
+            <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                <div class="form-inline">
+                    <input type="radio" id="quota_number_{{$index}}" name="quotaType" value="userdefined" ng-model="quotaChange.quotaType"/>
+                    <input id="quota_number_input_{{$index}}"
+                        name="quota_number_input_{{$index}}"
+                        type="text"
+                        class="form-control"
+                        size="10"
+                        maxlength="10"
+                        ng-focus="quotaChange.quotaType = 'userdefined'"
+                        ng-model="quotaChange.quota"
+                        ng-required="quotaChange.quotaType === 'userdefined'"
+                        email-numeric-quota
+                        email-min-quota="0"
+                        email-max-quota="{{maxQuota}}"
+                        email-quota-type="changeQuotaForm.quotaType"/>
+                    <span>[%- LANG.mb -%]</span>
+                </div>
+            </div>
+            <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                <ul validation-container field-name="quota_number_input_{{$index}}" id="quota_number_input_{{$index}}_error_panel">
+                    <li validation-item field-name="quota_number_input_{{$index}}" validation-name="emailMaxQuota" id="val-quota-max-quota">
+                        [%- LANG.mailbox_maxquota -%]
+                    </li>
+                    <li validation-item field-name="quota_number_input_{{$index}}" validation-name="required" id="val-quota-required">
+                        [%- LANG.quota_required -%]
+                    </li>
+                    <li validation-item field-name="quota_number_input_{{$index}}" validation-name="number" id="val-quota-number">
+                        [%- LANG.quota_required -%]
+                    </li>
+                    <li validation-item field-name="quota_number_input_{{$index}}" validation-name="emailMinQuota" id="val-quota-min-quota">
+                        [%- LANG.quota_positive -%]
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                 <label class="form-inline">
+                    <input type="radio" id="quota_unlimited_{{$index}}" name="quotaType" value="unlimited" ng-model="quotaChange.quotaType"/>
+                    <span> [% LANG.unlimited %]</span>
+                </label>
+            </div>
+            <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+            </div>
+        </div>
+    </div>
+    <div class="form-group">
+        <button id="change_quota_confirm_{{$index}}"
+            ng-disabled="changeQuotaForm.$invalid"
+            type="submit"
+            class="btn btn-primary"
+            spinner-id="spinnerChangeQuota"
+            cp-action="onClickChangeQuota()">[% LANG.save %]</button>
+        <button class="btn btn-link" ng-click="cancelAction()" ng-class="{ 'hide': changingQuota }">[% LANG.cancel %]</button>
+    </div>
+    <div></div>
+</form>

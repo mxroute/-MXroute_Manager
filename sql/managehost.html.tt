@@ -1,0 +1,78 @@
+[% SET CPANEL.CPVAR.dprefix = "../" %]
+[%
+    Api2.pre_exec("MysqlFE", "listhosts");
+    SET hosts =  Api2.exec("MysqlFE", "listhosts", {} );
+    Api2.post_exec("MysqlFE", "listhosts");
+%]
+
+[% WRAPPER '_assets/master.html.tt'
+    app_key = 'remote_mysql'
+    include_legacy_stylesheets = 1
+    include_legacy_scripts = 1
+    include_cjt = 1
+    page_scripts = ['js2-min/sql/managehost.js']
+-%]
+<div class="body-content">
+
+    <p id="descIntro" class="description">
+        [% locale.maketext("Add a specific domain name to allow visitors to connect to your MySQL databases. Applications like bulletin boards, online shopping carts, and content management systems require databases to operate. For more information, read the [output,url,_1,documentation,target,_2,id,_3].", "//go.cpanel.net/RemoteMySql", "_blank", "lnkRemoteMySqlDocumentation") %]
+    </p>
+
+    <div class="section">
+        <h2 id="hdrAddHost">[% locale.maketext("Add Access Host") %]</h2>
+        <form action="addhost.html" name="mainform" id="mainform" >
+            <div class="form-group">
+                <label id="lblHost" for="host">
+                    [% locale.maketext("Host (% wildcard is allowed)") %]
+                </label>
+                <div class="row">
+                    <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                        <input type="text" class="form-control" name="host" id="host">
+                    </div>
+                    <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6">
+                        <span id="host_error"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <input id="submit-button" type="submit" value="[% locale.maketext("Add Host") %]" class="btn btn-primary">
+            </div>
+        </form>
+    </div>
+
+    <div class="section">
+        <h2 id="hdrManageAccessHosts">[% locale.maketext("Manage Access Hosts") %]</h2>
+        <table id="sqltbl" class="sortable table table-striped">
+            <thead>
+                <tr>
+                    <th scope="col">[% locale.maketext("Access Hosts") %]</th>
+                    <th nonsortable="true" scope="col">[% locale.maketext("Remove") %]</th>
+                </tr>
+            </thead>
+            <tbody>
+            [% IF hosts.size() %]
+                [% FOREACH host IN hosts %]
+                <tr class="row-[%  loop.index % 2 == 0 ? 'even' : 'odd' %]">
+                    <td>
+                        [% host.host.html() %]
+                    </td>
+                    <td>
+                        <a href="delhostconfirm.html?host=[% host.host | url %]">
+                            <span class="glyphicon glyphicon-trash"></span>
+                            [% locale.maketext("Delete") %]
+                        </a>
+                    </td>
+                </tr>
+                [% END %]
+            [% ELSE %]
+                <tr>
+                    <td colspan="2" class="errors">
+                        [% locale.maketext("There are no additional [asis, MySQL] access hosts configured.") %]
+                    </td>
+                </tr>
+            [% END %]
+            </tbody>
+        </table>
+    </div>
+</div>
+[% END #wrapper %]

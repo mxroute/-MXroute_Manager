@@ -1,0 +1,31 @@
+[% SET CPANEL.CPVAR.dprefix = "../" %]
+[%
+    SET addhost = execute("Mysql", "add_host", {"host" => FORM.host});
+%]
+
+[% WRAPPER '_assets/master.html.tt'
+    app_key = 'mysql_databases'
+-%]
+<div class="body-content">
+
+    [% IF addhost.status %]
+    <div id="addhostSuccess" class="alert alert-success">
+        <span id="addhostSuccessImg" class="glyphicon glyphicon-ok-sign"></span>
+        <div id="addhostSuccessMsg" class="alert-message">
+            [% locale.maketext("The host “[_1]” was added to the access list.",FORM.host) %]
+        </div>
+    </div>
+    [% ELSE %]
+    <div id="addhostError" class="alert alert-danger">
+        <span id="addhostErrorImg" class="glyphicon glyphicon-exclamation-sign"></span>
+        <div id="addhostErrorMsg" class="alert-message">
+            [% FOREACH q = addhost.errors %]
+                [% q %]
+            [% END %]
+        </div>
+    </div>
+    [% END %]
+
+    [% INCLUDE _assets/return_link.html.tt return_location='managehost.html' return_link_text=locale.maketext('Go Back') %]
+</div>
+[% END #wrapper %]

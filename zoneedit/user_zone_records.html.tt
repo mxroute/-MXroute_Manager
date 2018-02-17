@@ -1,0 +1,48 @@
+[%
+USE Api2;
+SET zone_edit_fetch_zone_records = Api2.exec("ZoneEdit", "fetchzone_records", {"domain"=>FORM.item('domain'), "type"=>"A|CNAME", "customonly"=>"1"} );
+%]
+
+<table class="table table-striped" id="user_records_table">
+<thead>
+    <tr>
+        <th>[% locale.maketext("Name") %]</th>
+        <th>[% locale.maketext("Type") %]</th>
+        <th>[% locale.maketext("Record") %]</th>
+        <th>[% locale.maketext("Actions") %]</th>
+    </tr>
+</thead>
+<tbody>
+    [% IF zone_edit_fetch_zone_records.size %]
+        [% FOREACH hashref IN zone_edit_fetch_zone_records %]
+
+        <tr id="info_row_[%  hashref.Line.html() %]" class="dt_info_row">
+            <td><span class="zone_records_name">[% hashref.name.html() %]</span></td>
+            <td><span class="zone_records_type">[% hashref.type.html() %]</span></td>
+            <td>[% hashref.record.html() %]</td>
+            <td><span class="btn btn-link" id="lnkDel_[% hashref.Line.html() %]" onclick="toggle_confirm_delete([%  hashref.Line.html() %]);"><span class="glyphicon glyphicon-trash"></span>[% locale.maketext("Delete") %]</span></td>
+        </tr>
+        <tr id="module_row_[% hashref.Line.html() %]" class="dt_module_row">
+            <td colspan="6">
+                <div class="dt_module" id="delete_confirm_[% hashref.Line.html() %]">
+                    [% locale.maketext("Are you sure you want to delete “[output,strong,_1]”?", hashref.name.html()) %]<br />
+                    <div id="delete_input_[% hashref.Line.html() %]" style="margin-top:5px;">
+                         <input type="button" class="btn btn-primary dt_confirm_but" value="[% locale.maketext("Delete") %]" onclick="delete_line([% hashref.Line.html() %]);" id="btnDelRec_[% hashref.Line.html() %]" />
+                         <a class="btn btn-link" id="btnCancelDelRec_[% hashref.Line.html() %]" onclick="toggle_confirm_delete([% hashref.Line.html() %]);">[% locale.maketext("Cancel") %]</a>
+                    </div>
+                    <div id="delete_status_[% hashref.Line.html() %]"></div>
+                    <div style="height: 5px"></div>
+                    <div class="cjt_status_bar" id="delete_status_bar_[% hashref.Line.html() %]"></div>
+                </div>
+            </td>
+        </tr>
+        [% END %]
+    [% ELSE %]
+        <tr>
+            <td colspan="6">
+                <div>[% locale.maketext("There are no user-defined zone records for “[_1]”.",FORM.item('domain')) %]</div>
+            </td>
+        </tr>
+    [% END %]
+</tbody>
+</table>

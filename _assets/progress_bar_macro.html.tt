@@ -1,0 +1,49 @@
+[%  MACRO set_statistics_state(percentage, max_allowed)
+    BLOCK;
+        IF max_allowed == 'unlimited';
+            '';
+        ELSIF percentage >= 80;
+            'danger';
+        ELSIF percentage >= 60;
+            'warning';
+        ELSE;
+            '';
+        END;
+    END;
+%]
+
+[%  MACRO set_bar_class(percentage, max_allowed)
+    BLOCK;
+        IF max_allowed == 'unlimited';
+            'progress-bar progress-bar-disabled progress-bar-striped';
+        ELSIF percentage >= 80;
+            'progress-bar progress-bar-danger';
+        ELSIF percentage >= 60;
+            'progress-bar progress-bar-warning';
+        ELSIF percentage >= 40;
+            'progress-bar progress-bar-info';
+        ELSIF percentage >= 0;
+            'progress-bar progress-bar-success';
+        END;
+    END;
+%]
+
+[%  MACRO set_bar_width(percentage, max_allowed)
+    BLOCK;
+        IF max_allowed == 'unlimited';
+            '100';
+        ELSE;
+            ""_ percentage;
+        END;
+    END;
+%]
+
+[%  MACRO display_max_limit(max_allowed)
+    BLOCK;
+        IF max_allowed == 'unlimited';
+            '∞';
+        ELSE;
+            max_allowed;
+        END;
+    END;
+%]

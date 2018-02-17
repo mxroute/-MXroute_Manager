@@ -1,0 +1,49 @@
+[% IF FORM.size %]
+[%
+    SET CPANEL.CPVAR.dprefix = "../../";
+
+    Api1.pre_exec("Email", "has_spam_as_acl");
+    SET spam_as_acl_result = Api1.exec("Email", "has_spam_as_acl", [undef]);
+    Api1.post_exec("Email", "has_spam_as_acl");
+
+    Api1.pre_exec("SpamAssassin", "saveconfig");
+    SET sa_saveconfig_result = Api1.exec("SpamAssassin", "saveconfig", [FORM]);
+    Api1.post_exec("SpamAssassin", "saveconfig");
+%]
+[% END %]
+
+[% WRAPPER '_assets/master.html.tt'
+    app_key = 'apache_spam_assassin'
+%]
+<div class="body-content">
+    <h2>[% locale.maketext("Apache SpamAssassin™ Configuration")  %]</h2>
+
+    [% IF !FORM.size %]
+        <div class="alert alert-info">
+            <span class="glyphicon glyphicon-ok-sign"></span>
+            <div class="alert-message">
+                [% locale.maketext("You can not call this page directly.")  %]
+            </div>
+        </div>
+    [% ELSE %]
+    [% IF !(CPANEL.CPVAR.rewrites_subjects) %]
+        <div class="alert alert-info">
+            <span class="glyphicon glyphicon-info-sign"></span>
+            <div class="alert-message">
+                [% locale.maketext("Please note that Apache SpamAssassin™ is not configured for rewrites. You should check the X-Spam-Bar header for the spam bar in your filter, or for simplicity, you can also check the X-Spam-Status header for Yes or No.") %]
+            </div>
+        </div>
+
+    [% END %]
+    <br />
+    <div class="alert alert-success">
+        <span class="glyphicon glyphicon-ok-sign"></span>
+        <div class="alert-message">
+            [% locale.maketext("Your settings have been saved.")  %]
+        </div>
+    </div>
+    [% END %]
+
+    [% INCLUDE _assets/return_link.html.tt return_location='spam.html' return_link_text=locale.maketext('Go Back') %]
+</div>
+[% END %]
