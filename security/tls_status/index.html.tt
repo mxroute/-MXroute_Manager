@@ -39,8 +39,8 @@
 
     <section id="txtPageDescription" class="description">
         [% locale.maketext('You can use this interface to view the SSL status of your domains. If AutoSSL tried and failed to generate an SSL certificate for a domain, the reason will be listed here. You can force AutoSSL to run again as desired.') %]
-        <h2>[% locale.maketext("This is advanced and you should not be using this feature if you are not familiar with configuring SSL, cPanel's AutoSSL functionality, and how cPanel's proxy subdomains work. We will eventually streamline this process more, until then this is not user-friendly and we will not offer support for it.") %]
-        </h2>
+        [% locale.maketext("You can find instructions on how to use custom hostnames at the tutorial linked below.") %]
+        <br><a href="https://billing.mxroute.com/index.php?rp=/knowledgebase/47/How-to-use-custom-hostnames-for-SMTPorIMAPorPOP-and-Webmail.html">Custom Hostname Tutorial</a>
     </section>
 
 
