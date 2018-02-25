@@ -1,3 +1,4 @@
+[% SET CPANEL.CPVAR.dprefix="../../"  %]
 [% WRAPPER '_assets/master.html.tt'
     app_key = 'why'               # The file value from the dynamicui.conf file.
     page_title = "How to use custom hostnames"      # The page title.
