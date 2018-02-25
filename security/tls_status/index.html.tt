@@ -43,6 +43,7 @@
         <br><a href="how.html">Custom Hostname Tutorial</a>
     </section>
 
+<p><a href="why.html">Why are there random subdomains in the domain list below?</a></p><br>
 
     <div ng-controller="BaseController" class="ng-cloak" ng-cloak id="app_tlsStatus">
 
