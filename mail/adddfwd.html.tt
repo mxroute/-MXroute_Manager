@@ -15,7 +15,7 @@ SET mail_domains = execute("Email", "list_mail_domains", {});
 
         <p id="descDomainFwder" class="description">
             [% locale.maketext("In addition to forwarding individual mail accounts, you can forward all email from one domain to another.") %]
-            [% locale.maketext("To send all email for a domain to a single email address, change the Default Address for that domain.") %]
+            [% locale.maketext("To send all email for a domain to a single email address, change the Catchall Account for that domain.") %]
         </p>
         <form method="get" action="doadddfwd.html" name="mainform" id="mainform">
             <div class="form-group">

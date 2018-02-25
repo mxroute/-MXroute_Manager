@@ -85,7 +85,7 @@
 
     # Lookup locale strings once for all of the templates
     SET LANG = {
-        email_description = locale.maketext("Manage the email accounts associated with your domain. Use the [output,em,Set Up Mail Client] interface to add an email account to your mobile device or desktop email client. For more information, read the [output,url,_1,documentation,target,_2,id,_3].", "//go.cpanel.net/Accounts", "_blank", "lnkAccountsDocumentation"),
+        email_description = locale.maketext("Manage the email accounts associated with your domain."),
         add_email_account = locale.maketext("Add Email Account"),
         email = locale.maketext("Email"),
         mailbox_name_required = locale.maketext("You must enter a mailbox name."),

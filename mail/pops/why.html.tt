@@ -1,0 +1,13 @@
+[% WRAPPER '_assets/master.html.tt'
+    app_key = 'why'               # The file value from the dynamicui.conf file.
+    page_title = "Why are there random subdomains?"      # The page title.
+-%]
+
+When you go to "Add Email Account" and click on the dropdown box for Domain, you may notice a bunch of subdomains with random strings. This is intentional, though temporary. As we are working on improving the service, we are working around some of the base functions of cPanel for our frontend. The latest workaround we've made is to prevent you from having to create a subdomain for every domain that you add. As long as that feature remained, it confused users and still filled that dropdown box with unnecessary entries. We've removed half of it by randomly generating the subdomains for each addon domain. The next step in our process, which is currently giving us trouble, will be to remove these entires from that list.
+<br><br>
+In short, this is temporary and we will be fixing this soon.
+
+<br><br>
+<a href="javascript:history.back()">Go Back</a>
+
+[% END %]

@@ -8,9 +8,15 @@
         SET is_ftp_optional = 1; # We are not creating an FTP so we should don't need FTP quota check as a precondition
     END;
 
+    SET random_data = "";
+    SET getranddata = Api2.exec("Rand" , "getranddata" , {});
+    IF getranddata.size;
+        SET random_data = getranddata.0.random;
+    END;
+
     Api2.pre_exec("AddonDomain", "addaddondomain");
     SET addon_results = Api2.exec("AddonDomain" , "addaddondomain" , {
-        "subdomain" => FORM.domain,
+        "subdomain" => random_data.html(),
         "newdomain" => FORM.domain,
         "dir"       => FORM.domain,
         "ftp_is_optional" => is_ftp_optional,
