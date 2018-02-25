@@ -40,7 +40,7 @@
     <section id="txtPageDescription" class="description">
         [% locale.maketext('You can use this interface to view the SSL status of your domains. If AutoSSL tried and failed to generate an SSL certificate for a domain, the reason will be listed here. You can force AutoSSL to run again as desired.') %]
         [% locale.maketext("You can find instructions on how to use custom hostnames at the tutorial linked below.") %]
-        <br><a href="https://billing.mxroute.com/index.php?rp=/knowledgebase/47/How-to-use-custom-hostnames-for-SMTPorIMAPorPOP-and-Webmail.html">Custom Hostname Tutorial</a>
+        <br><a href="how.html">Custom Hostname Tutorial</a>
     </section>
 
 
