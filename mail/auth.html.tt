@@ -62,7 +62,7 @@ END; %]
         </p>
         <br>
         <p>
-        <h3><a href="https://billing.mxroute.com/index.php?rp=/knowledgebase/11/How-to-use-DKIM.html">Click here for the tutorial.</a></h3>
+        <h3><a href="dkimtutorial.html">Click here for the tutorial.</a></h3>
         </p>
         <p>&nbsp;</p>
         <div id="cjt_pagenotice_container"></div>
