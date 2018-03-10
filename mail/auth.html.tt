@@ -124,6 +124,18 @@ END; %]
             [% END %]
         </div>
     [% END %]
+
+               	[% locale.maketext("Your current raw DKIM records are:")  %]
+               	<pre>[%
+                Api2.pre_exec("DKIMUI", "getrecords");
+               	api2_result_DKIMUI_getrecords=Api2.exec("DKIMUI" , "getrecords");
+               	Api2.post_exec("DKIMUI", "getrecords");
+               	IF api2_result_DKIMUI_getrecords.size;
+                    FOREACH hashref IN api2_result_DKIMUI_getrecords; %]
+       	       	       	<pre>[% hashref.record.html(); %]</pre>[%
+                    END;
+               	END %]</pre>
+
 </div>
 [% END %]
 
